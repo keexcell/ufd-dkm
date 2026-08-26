@@ -1,5 +1,3 @@
-import sys
-#sys.path.append("../") #has to be run in same directory rn
 import external.simple_adl.simple_adl.isochrone as isochrone
 import external.simple_adl.simple_adl.coordinate_tools as coordinate_tools
 from alfred import plotting_functions, utils

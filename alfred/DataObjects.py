@@ -9,6 +9,13 @@ class Data():
         new_data = self.data[mask]
         return Data(new_data)
 
+class Band():
+    def __init__(self, flux, fluxerr, name):
+        self.flux = flux
+        self.fluxerr = fluxerr
+        self.mag = utils.flux2mag(flux)
+        self.magerr = utils.fluxerr2magerr(flux, fluxerr)
+        self.str = name
 
 class LSSTData(Data):
     def __init__(self, data, lsst_release, tract):
@@ -24,14 +31,19 @@ class LSSTData(Data):
         self.rubin_dec = data['coord_dec']
 
         ## Rubin bands
-        self.g_mag = utils.flux2mag(data['g_psfFlux'])
-        self.r_mag = utils.flux2mag(data['r_psfFlux'])
-        self.i_mag = utils.flux2mag(data['i_psfFlux'])
-        self.z_mag = utils.flux2mag(data['z_psfFlux'])
-        self.g_magerr = utils.fluxerr2magerr(data['g_psfFlux'], data['g_psfFluxErr'])
-        self.r_magerr = utils.fluxerr2magerr(data['r_psfFlux'], data['r_psfFluxErr'])
-        self.i_magerr = utils.fluxerr2magerr(data['i_psfFlux'], data['i_psfFluxErr'])
-        self.z_magerr = utils.fluxerr2magerr(data['z_psfFlux'], data['z_psfFluxErr'])
+        self.g = Band(data['g_psfFlux'], data['g_psfFlux'], 'g')
+        self.r = Band(data['r_psfFlux'], data['r_psfFlux'], 'r')
+        self.i = Band(data['i_psfFlux'], data['i_psfFlux'], 'i')
+        self.z = Band(data['z_psfFlux'], data['z_psfFlux'], 'z')
+        #then because I have so many functions already defined, some retroactive definitions:
+        self.g_mag = self.g.mag
+        self.g_magerr = self.g.magerr
+        self.r_mag = self.r.mag
+        self.r_magerr = self.r.magerr
+        self.i_mag = self.i.mag
+        self.i_magerr = self.i.magerr
+        self.z_mag = self.z.mag
+        self.z_magerr = self.z.magerr
 
     ## morphology
     def band_psfmincmodel(band, self):
@@ -60,20 +72,29 @@ class LSSTnEuclidData(LSSTData):
     
         ## Euclid bands (flux given in mu_Jy)
         num = 2 #as suggested in Zerjal et al
-        self.VIS_mag = utils.flux2mag(data[f'FLUX_VIS_{num}FWHM_APER'.lower()]*(10**3)) #convert to nJy
-        self.H_mag = utils.flux2mag(data[f'FLUX_H_{num}FWHM_APER'.lower()]*(10**3)) #convert to nJy
-        self.Y_mag = utils.flux2mag(data[f'FLUX_Y_{num}FWHM_APER'.lower()]*(10**3)) #convert to nJy
-        self.J_mag = utils.flux2mag(data[f'FLUX_J_{num}FWHM_APER'.lower()]*(10**3)) #convert to nJy
+        #convert fluxes to nJy, that's what the flux -> mag functions assume
+        self.VIS = Band(data[f'FLUX_VIS_{num}FWHM_APER'.lower()]*(10**3), 
+                        data[f'FLUXERR_VIS_{num}FWHM_APER'.lower()]*(10**3),
+                        'VIS')
+        self.H = Band(data[f'FLUX_H_{num}FWHM_APER'.lower()]*(10**3), 
+                      data[f'FLUXERR_H_{num}FWHM_APER'.lower()]*(10**3),
+                      'H')
+        self.Y = Band(data[f'FLUX_Y_{num}FWHM_APER'.lower()]*(10**3), 
+                      data[f'FLUXERR_Y_{num}FWHM_APER'.lower()]*(10**3),
+                      'Y')
+        self.J = Band(data[f'FLUX_J_{num}FWHM_APER'.lower()]*(10**3), 
+                      data[f'FLUXERR_J_{num}FWHM_APER'.lower()]*(10**3),
+                      'J')
+        #then because I have so many functions already defined, some retroactive definitions:
+        self.VIS_mag = self.VIS.mag
+        self.VIS_magerr = self.VIS.magerr
+        self.H_mag = self.H.mag
+        self.H_magerr = self.H.magerr
+        self.Y_mag = self.Y.mag
+        self.Y_magerr = self.Y.magerr
+        self.J_mag = self.J.mag
+        self.J_magerr = self.J.magerr
         
-        self.VIS_magerr = utils.fluxerr2magerr(data[f'FLUX_VIS_{num}FWHM_APER'.lower()]*(10**3), 
-                                               data[f'FLUXERR_VIS_{num}FWHM_APER'.lower()]*(10**3))
-        self.H_magerr = utils.fluxerr2magerr(data[f'FLUX_H_{num}FWHM_APER'.lower()]*(10**3),
-                                             data[f'FLUXERR_H_{num}FWHM_APER'.lower()]*(10**3))
-        self.Y_magerr = utils.fluxerr2magerr(data[f'FLUX_Y_{num}FWHM_APER'.lower()]*(10**3),
-                                             data[f'FLUXERR_Y_{num}FWHM_APER'.lower()]*(10**3))
-        self.J_magerr = utils.fluxerr2magerr(data[f'FLUX_J_{num}FWHM_APER'.lower()]*(10**3),
-                                             data[f'FLUXERR_J_{num}FWHM_APER'.lower()]*(10**3))
-
         ## morphology
         self.pointlikeprob = data['point_like_prob']
         self.ellipticity = data['ellipticity']
